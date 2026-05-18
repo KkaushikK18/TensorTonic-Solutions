@@ -11,234 +11,390 @@ def relu(x):
 
 '''
 /*
-Sigmoid Function Notes
-
-The sigmoid function squashes any real number into the range (0, 1).
-
-Formula:
-sigma(x) = 1 / (1 + e^(-x))
-
-No matter how large or small the input is, the output is always between 0 and 1.
-This makes sigmoid useful for representing probabilities.
+Activation Functions and ReLU Notes
 
 --------------------------------------------------
-Shape of Sigmoid
+What Activation Functions Do
 --------------------------------------------------
 
-The sigmoid curve is S-shaped.
+A neural network is built using layers of linear transformations.
 
-For large negative inputs:
-Output approaches 0.
+Each layer usually does:
 
-For large positive inputs:
-Output approaches 1.
+1. Multiply by a weight matrix
+2. Add a bias
 
-At x = 0:
-Output is exactly 0.5.
+This can be written as:
 
-Some values:
+y = W*x + b
 
-sigma(-10) ≈ 0.000045
-sigma(-5)  ≈ 0.0067
-sigma(-2)  ≈ 0.119
-sigma(-1)  ≈ 0.269
-sigma(0)   = 0.5
-sigma(1)   ≈ 0.731
-sigma(2)   ≈ 0.881
-sigma(5)   ≈ 0.9933
-sigma(10)  ≈ 0.999955
-
---------------------------------------------------
-Why Sigmoid Outputs Probabilities
---------------------------------------------------
-
-sigma(x) = 1 / (1 + e^(-x))
-
-1. Always positive:
-   e^(-x) > 0 for all x.
-   So, 1 + e^(-x) > 1.
-   Therefore, sigmoid output is positive.
-
-2. Always less than 1:
-   The denominator is always greater than 1.
-   So, 1 / (1 + e^(-x)) is always less than 1.
-
-3. Monotonically increasing:
-   As x increases, e^(-x) decreases.
-   So the denominator decreases and the sigmoid value increases.
-
-Because of these properties, sigmoid is used to convert raw model outputs,
-called logits, into probabilities for binary classification.
-
---------------------------------------------------
-Derivative of Sigmoid
---------------------------------------------------
-
-The derivative of sigmoid is:
-
-d(sigma)/dx = sigma(x) * (1 - sigma(x))
-
-This is useful because once sigma(x) is calculated, its derivative is easy
-to calculate.
-
-Examples:
-
-At x = 0:
-sigma(0) = 0.5
-derivative = 0.5 * (1 - 0.5) = 0.25
-
-At x = 2:
-sigma(2) ≈ 0.881
-derivative = 0.881 * (1 - 0.881) ≈ 0.105
-
-At x = 5:
-sigma(5) ≈ 0.9933
-derivative = 0.9933 * (1 - 0.9933) ≈ 0.0066
-
-The gradient is largest at x = 0 and becomes very small when x is far
-from zero.
-
-This can cause the vanishing gradient problem in deep neural networks.
-
---------------------------------------------------
-Numerical Stability
---------------------------------------------------
-
-Directly computing e^(-x) can overflow for large negative x.
+The problem is that if we stack only linear layers, the final result is
+still just a linear function.
 
 Example:
-If x = -1000,
 
-e^(-x) = e^1000
+Two layers without activation:
 
-This is extremely large and may become infinity in a computer.
+y = W2 * (W1*x + b1) + b2
 
-To avoid this, we use a numerically stable version.
+Expanding it:
 
-For x >= 0:
+y = (W2*W1)*x + (W2*b1 + b2)
 
-sigma(x) = 1 / (1 + e^(-x))
+This is still of the form:
 
-For x < 0:
+y = A*x + c
 
-sigma(x) = e^x / (1 + e^x)
+So even if we stack many linear layers, the network can only learn linear
+relationships.
 
-Both formulas are mathematically equivalent.
+Without activation functions, the neural network cannot learn complex
+patterns like:
 
-The second formula avoids computing e^(-x) when x is a large negative number.
+- Image classification
+- Language understanding
+- Non-linear decision boundaries
+- Complex function approximation
+
+Activation functions solve this problem.
+
+After each linear transformation, an activation function applies a
+non-linear operation element-wise.
+
+This non-linearity gives neural networks the power to learn complex
+patterns.
 
 --------------------------------------------------
-Sigmoid vs Other Activation Functions
+ReLU: The Simplest Nonlinearity
 --------------------------------------------------
 
-Sigmoid:
-Range: (0, 1)
-Gradient at 0: 0.25
-Used in:
-- Binary classification output layers
-- Gating mechanisms
+ReLU stands for Rectified Linear Unit.
 
-Tanh:
-Range: (-1, 1)
-Gradient at 0: 1.0
-Used in:
-- Hidden layers in older networks
-- LSTM and GRU internal states
-
-ReLU:
-Range: [0, infinity)
-Gradient:
-- 1 for x > 0
-- 0 for x < 0
-
-Used in:
-- Hidden layers in modern neural networks
-
-Tanh is a rescaled sigmoid:
-
-tanh(x) = 2 * sigmoid(2x) - 1
-
-Tanh is zero-centered, meaning its output ranges from -1 to 1.
-This can help neural networks converge faster than sigmoid in hidden layers.
-
-ReLU is defined as:
+It is defined as:
 
 ReLU(x) = max(0, x)
 
-ReLU helps reduce the vanishing gradient problem because its gradient is 1
-for positive inputs.
+The rule is simple:
 
---------------------------------------------------
-Where Sigmoid Is Used Today
---------------------------------------------------
+If x > 0:
+Output x
 
-1. Binary Classification Output Layer
-
-A binary classifier usually outputs a single raw value called a logit.
-Sigmoid converts this logit into a probability.
-
-P(y = 1 | x) = sigmoid(logit)
-
-Example:
-If sigmoid output is 0.9, the model is confident that the class is 1.
-If sigmoid output is 0.1, the model is confident that the class is 0.
-If sigmoid output is 0.5, the model is uncertain.
-
-2. Gating Mechanisms
-
-Sigmoid is used in LSTMs and GRUs.
-
-These gates control how much information should pass through.
+If x <= 0:
+Output 0
 
 Examples:
-- Forget gate: decides what information to discard
-- Input gate: decides what new information to store
-- Output gate: decides what information to output
 
-These gates need values between 0 and 1.
+ReLU(3.5) = 3.5
+ReLU(0) = 0
+ReLU(-2.7) = 0
+ReLU(100) = 100
 
-0 means block the information.
-1 means allow the information to pass.
-Values between 0 and 1 mean partially allow the information.
+The shape of ReLU looks like a hockey stick.
 
-3. Attention Mechanisms
+For negative inputs:
+The graph is flat at 0.
 
-Some attention mechanisms use sigmoid instead of softmax.
+For positive inputs:
+The graph is a straight line with slope 1.
 
-Sigmoid is useful when attention weights are independent and do not need
-to sum to 1.
+--------------------------------------------------
+Why ReLU Became Dominant
+--------------------------------------------------
 
-4. Multi-label Classification
+Before ReLU, sigmoid and tanh were commonly used activation functions.
 
-In multi-label classification, each class is independent.
+Sigmoid squashes values into the range:
+
+(0, 1)
+
+Tanh squashes values into the range:
+
+(-1, 1)
+
+They worked, but they had a major problem:
+
+Vanishing gradient problem.
+
+--------------------------------------------------
+Vanishing Gradient Problem
+--------------------------------------------------
+
+Sigmoid and tanh saturate for large positive or negative inputs.
+
+This means their output changes very little for large inputs.
+
+In saturated regions, their derivative becomes almost zero.
+
+During backpropagation, gradients are multiplied through many layers.
+
+If each layer has a very small derivative, the gradient becomes smaller
+and smaller.
+
+This causes the gradient to shrink exponentially.
+
+As a result:
+
+- Earlier layers learn very slowly
+- Deep layers may barely learn
+- Training deep networks becomes difficult
+
+--------------------------------------------------
+How ReLU Helps
+--------------------------------------------------
+
+ReLU fixes this problem for positive inputs.
+
+The derivative of ReLU is 1 for all x > 0.
+
+This means gradients pass through unchanged for positive inputs.
+
+Because of this:
+
+- Gradient signals survive through many layers
+- Deep networks train faster
+- ReLU works better than sigmoid/tanh in many hidden layers
+
+--------------------------------------------------
+Practical Advantages of ReLU
+--------------------------------------------------
+
+1. Computationally cheap
+
+ReLU only needs a comparison with zero.
+
+It does not need exponentials or divisions.
+
+2. Sparse activation
+
+Many neurons output exactly 0.
+
+This creates sparse representations.
+
+Sparse representations can be more efficient and may generalize better.
+
+3. Easy to implement
+
+ReLU can be implemented in one line:
+
+return max(0, x)
+
+--------------------------------------------------
+Gradient of ReLU
+--------------------------------------------------
+
+The derivative of ReLU is:
+
+d/dx ReLU(x) = 1, if x > 0
+d/dx ReLU(x) = 0, if x < 0
+
+At x = 0:
+
+ReLU has a sharp corner.
+
+So it is technically not differentiable at x = 0.
+
+In practice, frameworks usually define the derivative at x = 0 as 0.
+
+Some may use 0.5 or 1.
+
+This usually does not cause problems because hitting exactly x = 0 is rare
+with floating-point numbers.
+
+--------------------------------------------------
+Why ReLU Gradient Is Useful
+--------------------------------------------------
+
+For positive inputs, ReLU has gradient 1.
+
+This means the gradient does not shrink while passing through ReLU.
+
+Compare this with sigmoid:
+
+The maximum gradient of sigmoid is only 0.25 at x = 0.
+
+After 10 sigmoid layers, the gradient may shrink by:
+
+0.25^10 ≈ 10^(-6)
+
+This is extremely small.
+
+That is why sigmoid can cause vanishing gradients in deep networks.
+
+ReLU avoids this problem in the positive region.
+
+--------------------------------------------------
+Dead Neuron Problem
+--------------------------------------------------
+
+The main weakness of ReLU is the dead neuron problem.
+
+For negative inputs:
+
+ReLU output = 0
+ReLU gradient = 0
+
+If a neuron's weighted input is negative for every training example, then:
+
+- It always outputs 0
+- It receives zero gradient
+- Its weights stop updating
+- It contributes nothing to the network
+
+Such a neuron is called a dead neuron.
+
+--------------------------------------------------
+How Neurons Die
+--------------------------------------------------
+
+A neuron can die when:
+
+1. A large gradient update changes the weights too much
+2. The neuron's pre-activation becomes negative for all inputs
+3. Since the input is always negative, ReLU output is always 0
+4. Since the gradient is also 0, the weights never update again
+
+The neuron becomes permanently inactive.
+
+This can happen more often when the learning rate is too high.
+
+In some networks, a significant number of neurons can die.
+
+--------------------------------------------------
+Solutions to Dead Neuron Problem
+--------------------------------------------------
+
+Some ReLU variants solve or reduce this issue.
+
+1. Leaky ReLU
+
+Leaky ReLU allows a small negative slope for negative inputs.
+
+Instead of outputting 0 for negative x, it outputs:
+
+alpha * x
+
+So negative inputs still get a small gradient.
+
+2. ELU
+
+ELU uses an exponential curve for negative inputs.
+
+This gives smoother behavior than ReLU.
+
+3. GELU / Swish
+
+GELU and Swish are smooth activation functions.
+
+They avoid having exactly zero gradient in many regions.
+
+4. Careful Initialization
+
+Proper weight initialization reduces the chance of neurons starting in the
+dead region.
 
 Example:
-An image can contain multiple labels at the same time:
-- cat
-- dog
-- car
-- person
 
-In this case, sigmoid is applied independently to each output neuron.
+He initialization is commonly used with ReLU.
 
-This is different from softmax, where probabilities across all classes
-must sum to 1.
+--------------------------------------------------
+Where ReLU Is Used
+--------------------------------------------------
+
+ReLU is the default activation function for many neural network
+architectures.
+
+It is commonly used in:
+
+1. Convolutional Neural Networks
+
+CNNs use ReLU in hidden layers.
+
+AlexNet in 2012 was one of the first major successful CNNs that used ReLU.
+
+After that, many CNN architectures used ReLU or its variants.
+
+2. Fully Connected Layers
+
+ReLU is commonly used in hidden layers of MLPs.
+
+3. Generative Models
+
+ReLU is used in generators and discriminators of GANs.
+
+4. Residual Networks
+
+ResNets often use ReLU after residual blocks.
+
+--------------------------------------------------
+Where ReLU Is Less Common
+--------------------------------------------------
+
+1. Output Layers
+
+ReLU is usually not used in output layers when bounded outputs are needed.
+
+For binary classification:
+Use sigmoid.
+
+For multi-class classification:
+Use softmax.
+
+2. Transformers
+
+Transformers usually use GELU or Swish in feed-forward layers.
+
+3. RNNs
+
+RNNs often use tanh or sigmoid for recurrent connections.
+
+Using ReLU in recurrent loops can sometimes cause exploding activations.
 
 --------------------------------------------------
 Summary
 --------------------------------------------------
 
-The sigmoid function:
-- Converts any real number into a value between 0 and 1
-- Is useful for representing probabilities
-- Has an S-shaped curve
-- Gives output 0.5 when x = 0
-- Has derivative sigma(x) * (1 - sigma(x))
-- Can suffer from vanishing gradients
-- Is commonly used in:
-  - Binary classification
-  - Multi-label classification
-  - LSTM and GRU gates
-  - Some attention mechanisms
+Activation functions add non-linearity to neural networks.
+
+Without activation functions, multiple linear layers collapse into a single
+linear function.
+
+ReLU is defined as:
+
+ReLU(x) = max(0, x)
+
+ReLU outputs:
+
+- x, if x > 0
+- 0, if x <= 0
+
+Advantages of ReLU:
+
+- Simple
+- Fast to compute
+- Helps reduce vanishing gradients
+- Produces sparse activations
+- Works well in deep networks
+
+Derivative of ReLU:
+
+- 1 for x > 0
+- 0 for x < 0
+
+Main weakness:
+
+Dead neuron problem.
+
+A neuron can become dead if it always receives negative inputs and therefore
+always outputs 0.
+
+Solutions include:
+
+- Leaky ReLU
+- ELU
+- GELU
+- Swish
+- Proper weight initialization
+
+ReLU is mainly used in hidden layers of deep neural networks.
 */
 '''
